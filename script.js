@@ -37,32 +37,81 @@ class Grid {
 }
 
 const updateAI = x => {
-	for (let i = 0; i < x; i++) {
-		for (let j = 0; j < x; j++) {
+	for (let i = 0; i < 3; i++) {
+		for (let j = 0; j < 3; j++) {
 			const grid = gameGrid[i][j];
 
-			// eval rows
+			// eval rows and col
 
+			let countRow = 0;
+			let countCol = 0;
 
-            let count = 0;
-			//         console.log(grid)
 			for (let x = 0; x < 3; x++) {
 				let targetRowGrid = gameGrid[i][x];
 				let targetColGrid = gameGrid[x][j];
 
-				if (grid !== targetRowGrid && grid != targetColGrid) {
-                    if (targetRowGrid.player){
-                        count++;
-                        
-                    }
-                }
+				if (grid !== targetRowGrid) {
+					if (targetRowGrid.player) {
+						countRow++;
+					}
+				}
+
+				if (grid !== targetColGrid) {
+					if (targetColGrid.player) {
+						countCol++;
+					}
+				}
 			}
-            console.log(count)
+			//		console.log(countRow, countCol);
+
+			grid.aiScore = 0;
+			countRow > 1
+				? (grid.aiScore += 100 + grid.aiBaseScore)
+				: countRow > 0
+				? (grid.aiScore += 1 + grid.aiBaseScore)
+				: (grid.aiScore += grid.aiBaseScore);
+
+			countCol > 1
+				? (grid.aiScore += 100 + grid.aiBaseScore)
+				: countCol > 0
+				? (grid.aiScore += 1 + grid.aiBaseScore)
+				: (grid.aiScore += grid.aiBaseScore);
 			//eval cols
 
 			//eval diags
+
+			grid.display.innerHTML = grid.aiScore;
+			console.log(grid.aiScore);
 		}
 	}
+	aiMakeMove();
+};
+
+const aiMakeMove = () => {
+	highestScorer = null;
+	for (let i = 0; i < 3; i++) {
+		for (let j = 0; j < 3; j++) {
+			const grid = gameGrid[i][j];
+
+			if (!highestScorer && !grid.player && !grid.ai) {
+				highestScorer = grid;
+			}
+			if (
+				highestScorer &&
+				highestScorer.aiScore < grid.aiScore &&
+				!grid.player &&
+				!grid.ai
+			) {
+				highestScorer = grid;
+			}
+		}
+	}
+	highestScorer.player = true;
+	highestScorer.display.style.backgroundColor = "blue";
+	playerTurn = true;
+	msgContainer.innerHTML = "Your turn.";
+
+	console.log(highestScorer);
 };
 
 const initializeGame = x => {
