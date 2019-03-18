@@ -1,0 +1,17 @@
+body {
+    padding:0;
+    margin:0;
+}
+#game-container {
+    height: auto;
+    width: auto;
+    
+}
+.grid{
+    position: absolute;
+    width:100px;
+    height:100px;
+    background-color: coral;
+    border:2px solid black;
+
+}
