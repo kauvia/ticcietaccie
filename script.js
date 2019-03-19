@@ -10,9 +10,12 @@ class Grid {
 		this.player = false;
 		this.ai = false;
 
-		//score for AI eval
-		this.playerScore = 0;
-		this.aiScore = 0;
+		//scores for AI eval
+		this.scores = {
+			win: 0,
+			block: 0,
+			fork: 0
+		};
 		this.aiBaseScore = aiBaseScore;
 	}
 	displayGrid = () => {
@@ -30,60 +33,114 @@ class Grid {
 			this.player = true;
 			this.display.style.backgroundColor = "red";
 			playerTurn = false;
-			msgContainer.innerHTML = "AI turn.";
+			//check end of game, if not proceed to ai's turn
+			checkEndGame() ? endGame() : updateAI();
 
-			updateAI(gameSize);
 		}
 	};
 }
 
-const updateAI = x => {
+
+
+
+
+
+// Algorithm for AI
+
+// 		Process
+
+// Winning move > blocking move > blocking forks > normal moves
+
+const updateAI = () => {
+
+	// GET THE SCORES
 	for (let i = 0; i < 3; i++) {
 		for (let j = 0; j < 3; j++) {
 			const grid = gameGrid[i][j];
 
-			//Evaluate Win
+			//Evaluate Winning moves and Blocking moves//
 
-			// Evaluate Block
-
-
-			let countRow = evaluateLine("row", i);
-			let countCol = evaluateLine("col", j);
-			let countDiag = [null, null];
-
-			if (
-				((i === 0 || i === 2) && (j === 0 || j === 2)) ||
-				(i === 1 && j === 1)
-			) {
-				countDiag =
-					i === j ? evaluateLine("forwardDiag") : evaluateLine("reverseDiag");
+				//scores for rows,columns, and diagonals
+			let diagScores = [null, null];
+			let rowScores = evalWinAndBlock("row", i);
+			let colScores = evalWinAndBlock("col", j);
+				//For corner grids
+			if ((i === 0 || i === 2) && (j === 0 || j === 2)) {
+				diagScores =
+					i === j
+						? evalWinAndBlock("forwardDiag")
+						: evalWinAndBlock("reverseDiag");
+			}
+				//For center grid
+			if (i === 1 && j === 1) {
+				let tempForward = evalWinAndBlock("forwardDiag");
+				let tempReverse = evalWinAndBlock("reverseDiag");
+				diagScores = [
+					tempForward[0] + tempReverse[0],
+					tempForward[1] + tempReverse[1]
+				];
 			}
 
-			//Evaluate Block Fork
 
 			//Evaluate Fork
+			let forkScores = null;
+			if ((i === 0 || i === 2) && (j === 0 || j === 2)) {
+				forkScores = evaluateFork(i, j);
+			}
 
-			grid.aiScore = 0;
-			grid.playerScore = 0;
 
-			grid.aiScore =
-				countRow[0] + countCol[0] + countDiag[0] + grid.aiBaseScore;
-			grid.playerScore =
-				countRow[1] + countCol[1] + countDiag[1] + grid.aiBaseScore;
+			//update the grid's scores 
+			grid.scores.win = diagScores[0] + rowScores[0] + colScores[0];
+			grid.scores.block = diagScores[1] + rowScores[1] + colScores[1];
+			grid.scores.fork = forkScores;
 
-			grid.display.innerHTML = grid.aiScore;
-			grid.display.innerHTML += "<br>";
-
-			grid.display.innerHTML += grid.playerScore;
-			grid.display.innerHTML += "<br>";
 		}
 	}
-	aiMakeMove();
+
+	//EVALUATE THE SCORES
+	let highestScorer = aiEvalScores();
+
+	//MAKE THE MOVE ON THE BOARD
+	aiMakeMove(highestScorer)
 };
 
-const evaluateLine = (direction, i) => {
-	let playerScore = 0;
-	let aiScore = false;
+
+	//return 100 if grid needs to be played to protect from player fork attacks
+const evaluateFork = (i, j) => {
+	let forkScore = 0;
+	//TOP LEFT
+	if (i === 0 && j === 0) {
+		if (gameGrid[0][1].player && gameGrid[1][0].player) {
+			forkScore = 100;
+		}
+	}
+	//TOP RIGHT
+	if (i === 0 && j === 2) {
+		if (gameGrid[0][1].player && gameGrid[1][2].player) {
+			forkScore = 100;
+		}
+	}
+	//BOT LEFT
+	if (i === 2 && j === 0) {
+		if (gameGrid[1][0].player && gameGrid[2][1].player) {
+			forkScore = 100;
+		}
+	}
+	//BOT RIGHT
+	if (i === 2 && j === 2) {
+		if (gameGrid[2][1].player && gameGrid[1][2].player) {
+			forkScore = 100;
+		}
+	}
+	return forkScore;
+};
+
+	//return 100 for winScore if ai WILL win
+	//return 1000 for blockScore if ai HAVE lost(shouldn't happen though...)
+	//return 100 for blockScore if ai MUST play that grid or else player will win 
+const evalWinAndBlock = (direction, i) => {
+	let blockScore = 0;
+	let winScore = 0;
 
 	let playerPresent = false;
 	let aiPresent = false;
@@ -100,95 +157,88 @@ const evaluateLine = (direction, i) => {
 			targetGrid = gameGrid[2 - x][x];
 		}
 
+		//checks if this line contains player
 		if (targetGrid.player) {
-			playerScore++;
+			blockScore++;
 			playerPresent = true;
 		}
+		//check if this line contains ai
 		if (targetGrid.ai) {
-			aiScore++;
+			winScore++;
 			aiPresent = true;
 		}
 	}
-
+	// Evaluate whether to play this grid to win game immediately, winScore = 100 is immediate win
 	if (playerPresent) {
-		aiScore = 0;
-	} else if (aiScore === 3) {
-		aiScore = 1000;
-	} else if (aiScore === 2) {
-		aiScore = 100;
-	} else if (aiScore === 1) {
-		aiScore = 1;
+		winScore = 0;
+	} else if (winScore === 2) {
+		winScore = 100;
 	} else {
-		aiScore = 0;
+		winScore = 0;
 	}
 
+	// Evaluate whether to block; 1000 = AI lost, 100 = Must block or lose, 0 = doesn't need to block
 	if (aiPresent) {
-		playerScore = 0;
-	} else if (playerScore === 3) {
-		playerScore = 1000;
-	} else if (playerScore === 2) {
-		playerScore = 100;
-	} else if (playerScore === 1) {
-		playerScore = 1;
+		blockScore = 0;
+	} else if (blockScore === 3) {
+		blockScore = 1000;
+	} else if (blockScore === 2) {
+		blockScore = 100;
 	} else {
-		playerScore = 0;
+		blockScore = 0;
 	}
 
-	return [aiScore, playerScore];
+	return [winScore, blockScore];
 };
 
-const aiMakeMove = () => {
-	highestScorer = null;
+
+	//evaluate all the win,block,and fork scores and return the grid that should be played
+const aiEvalScores = () => {
+	let highestScorer = null;
 	for (let i = 0; i < 3; i++) {
 		for (let j = 0; j < 3; j++) {
 			const grid = gameGrid[i][j];
 
-			if (!highestScorer && !grid.player && !grid.ai) {
-				highestScorer = grid;
-			}
-			if (
-				highestScorer &&
-				highestScorer.playerScore < grid.playerScore &&
-				!grid.player &&
-				!grid.ai
-			) {
-				highestScorer = grid;
+			if (!grid.player && !grid.ai) {
+				if (!highestScorer) {
+					highestScorer = grid;
+				}
+				if (grid.scores.win >= 100) {
+					endGame(true);
+					return grid;
+				} else if (grid.scores.block >= 100) {
+					highestScorer = grid;
+				} else if (
+					highestScorer.scores.fork < grid.scores.fork &&
+					highestScorer.scores.block <= grid.scores.block
+				) {
+					highestScorer = grid;
+				} else if (
+					highestScorer.aiBaseScore < grid.aiBaseScore &&
+					highestScorer.scores.fork <= grid.scores.fork &&
+					highestScorer.scores.block <= grid.scores.fork
+				) {
+					highestScorer = grid;
+				}
 			}
 		}
 	}
+	return highestScorer;
+};
+
+
+	// update the dom elements and either end game or pass to player
+const aiMakeMove = (highestScorer) => {
+
 	highestScorer.ai = true;
 	highestScorer.display.style.backgroundColor = "blue";
-	playerTurn = true;
-	msgContainer.innerHTML = "Your turn.";
-
-	console.log(highestScorer);
+	checkEndGame() ? endGame() : (playerTurn = true);
+	console.log(gameGrid);
 };
 
-const initializeGame = x => {
-	for (let i = 0; i < x; i++) {
-		gameGrid[i] = [];
-		for (let j = 0; j < x; j++) {
-			gameGrid[i].push(new Grid(j + 100 * j, i + 100 * i));
-			gameGrid[i][j].displayGrid();
-			gameGrid[i][j].getUserInput();
 
-			if (aiMode === "hard") {
-				if ((i === 0 || i === 2) && (j === 0 || j === 2)) {
-					gameGrid[i][j].display.innerHTML = "+0";
-					gameGrid[i][j].aiBaseScore = 0;
-				}
-				if (i === 1 && j === 1) {
-					gameGrid[i][j].display.innerHTML = "+3";
-					gameGrid[i][j].aiBaseScore = 3;
-				}
-			}
-		}
-	}
-	if (playerTurn) {
-		msgContainer.innerHTML = "Your turn.";
-	} else {
-		msgContainer.innerHTML = "AI turn.";
-	}
-};
+// END OF AI ALGORITHM				//
 
-initializeGame(gameSize);
+
+
+
