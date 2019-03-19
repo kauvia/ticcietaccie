@@ -49,7 +49,7 @@ class Grid {
 
 // 		Process
 
-// Winning move > blocking move > blocking forks > normal moves
+// Winning move > blocking move > blocking forks > other moves
 
 const updateAI = () => {
 
@@ -57,6 +57,15 @@ const updateAI = () => {
 	for (let i = 0; i < 3; i++) {
 		for (let j = 0; j < 3; j++) {
 			const grid = gameGrid[i][j];
+
+			//Change seed if player plays middle
+
+			if (gameGrid[1][1].player){
+				if ((i === 0 || i === 2) && (j === 0 || j === 2)) {
+						grid.aiBaseScore=2;
+				}
+			}
+
 
 			//Evaluate Winning moves and Blocking moves//
 
@@ -85,7 +94,7 @@ const updateAI = () => {
 			//Evaluate Fork
 			let forkScores = null;
 			if ((i === 0 || i === 2) && (j === 0 || j === 2)) {
-				forkScores = evaluateFork(i, j);
+				forkScores = evalFork(i, j);
 			}
 
 
@@ -106,7 +115,7 @@ const updateAI = () => {
 
 
 	//return 100 if grid needs to be played to protect from player fork attacks
-const evaluateFork = (i, j) => {
+const evalFork = (i, j) => {
 	let forkScore = 0;
 	//TOP LEFT
 	if (i === 0 && j === 0) {
