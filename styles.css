@@ -28,3 +28,9 @@ body {
 	top: 400px;
 	left: 200px;
 }
+
+#random-button{
+	position: absolute;
+	top: 400px;
+	left: 350px;
+}

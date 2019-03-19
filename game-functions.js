@@ -1,7 +1,6 @@
-
 // 			GAME FUNCTIONS 			//
 
-    //creates the grid and seeds base score to prioritize certain grids based on who start first
+//creates the grid and seeds base score to prioritize certain grids based on who start first
 const initializeGame = () => {
 	for (let i = 0; i < 3; i++) {
 		gameGrid[i] = [];
@@ -26,8 +25,7 @@ const initializeGame = () => {
 	}
 };
 
-
-	//return true if no moves left a.k.a it's a draw
+//return true if no moves left a.k.a it's a draw
 const checkEndGame = () => {
 	let filledGrid = 0;
 	for (let i = 0; i < 3; i++) {
@@ -41,7 +39,7 @@ const checkEndGame = () => {
 	return filledGrid === 9 ? true : false;
 };
 
-    //END THE GAME
+//END THE GAME
 const endGame = (aiWon = false) => {
 	// Message for player
 	aiWon
@@ -57,17 +55,24 @@ const endGame = (aiWon = false) => {
 	}
 };
 
+// Button handlers
 
-// Button handlers 
-
-	//let player go first
+//let player go first
 const playerFirstButtonHandler = () => {
 	initializeGame();
 };
 
-	// let ai go first
+// let ai go first
 const aiFirstButtonHandler = () => {
 	playerTurn = false;
 	initializeGame();
 	updateAI();
+};
+
+const randomButtonHandler = () => {
+	Math.random() > 0.5 ? initializeGame() : (playerTurn = false);
+	if (!playerTurn) {
+		initializeGame();
+		updateAI();
+	}
 };
