@@ -176,9 +176,18 @@
 			//return 100 if grid needs to be played to protect from player fork attacks
 			const evalFork = (i, j) => {
 				let forkScore = 0;
-				//TOP LEFT
+								//TOP LEFT
 				if (i === 0 && j === 0) {
 					if (gameGrid[0][1].player && gameGrid[1][0].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[0][2].player && gameGrid[1][0].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[0][1].player && gameGrid[1][0].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[0][1].player && gameGrid[2][0].player) {
 						forkScore = 100;
 					}
 				}
@@ -187,16 +196,43 @@
 					if (gameGrid[0][1].player && gameGrid[1][2].player) {
 						forkScore = 100;
 					}
+					if (gameGrid[0][0].player && gameGrid[1][2].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[0][1].player && gameGrid[1][2].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[0][1].player && gameGrid[2][2].player) {
+						forkScore = 100;
+					}
 				}
 				//BOT LEFT
 				if (i === 2 && j === 0) {
 					if (gameGrid[1][0].player && gameGrid[2][1].player) {
 						forkScore = 100;
 					}
+					if (gameGrid[0][0].player && gameGrid[2][1].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[1][0].player && gameGrid[2][1].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[1][0].player && gameGrid[2][2].player) {
+						forkScore = 100;
+					}
 				}
 				//BOT RIGHT
 				if (i === 2 && j === 2) {
 					if (gameGrid[2][1].player && gameGrid[1][2].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[2][0].player && gameGrid[1][2].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[2][1].player && gameGrid[1][2].player) {
+						forkScore = 100;
+					}
+					if (gameGrid[2][1].player && gameGrid[0][2].player) {
 						forkScore = 100;
 					}
 				}
